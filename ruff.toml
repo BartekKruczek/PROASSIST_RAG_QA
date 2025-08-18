@@ -2,10 +2,10 @@ include = [
     "pyproject.toml",
     "RAG_QA/**",
     "utils/**",
+    "logger/**",
 ]
 exclude = [
     "docs/**",
-    "logger/**",
 ]
 
 [lint]
