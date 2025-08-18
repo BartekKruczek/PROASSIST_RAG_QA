@@ -1,0 +1,10 @@
+[project]
+name = "proassist-rag-qa"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "langchain>=0.3.27",
+    "llama-cpp-python>=0.3.16",
+]
