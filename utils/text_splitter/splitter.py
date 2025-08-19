@@ -17,7 +17,7 @@ def _get_text_from_file(file_path: str) -> str:
         return file.read()
 
 
-def create_texts_splitters(**kwargs) -> list[list[str]]:
+def create_texts_splitters(**kwargs) -> tuple[list[list[str]], list[str]]:
     """
     Create a list of text splitters based on the content of files in the 'data' directory.
 
@@ -30,7 +30,8 @@ def create_texts_splitters(**kwargs) -> list[list[str]]:
     """
     model_splitter = load_sentence_transformers_model(**kwargs)
     folder_path: str = "./docs/"
-    texts_splitters = []
+    texts_splitters: list[list[str]] = []
+    file_names: list[str] = []
 
     for file_name in os.listdir(folder_path):
         if file_name.endswith(".txt"):
@@ -38,5 +39,6 @@ def create_texts_splitters(**kwargs) -> list[list[str]]:
             text_content = _get_text_from_file(file_path)
             text_splitter = model_splitter.split_text(text_content)
             texts_splitters.append(text_splitter)
+            file_names.append(file_name)
 
-    return texts_splitters
+    return texts_splitters, file_names

@@ -1,6 +1,7 @@
 from langchain.globals import set_verbose
 
 from logger.create_logger import create_logger
+from utils.embeddings.faiss_storage import create_vector_db
 from utils.model_loader.loader import (
     load_chat_model,
     load_embeddings_model,
@@ -14,24 +15,22 @@ def main():
     """
     set_verbose(False)
 
-    llm = load_chat_model(
+    load_chat_model(
         max_tokens=16384,
     )
-    load_embeddings_model(
-        model_id="Qwen/Qwen3-Embedding-8B-GGUF",
-        model_filename="Qwen3-Embedding-8B-Q4_K_M.gguf",
-    )
-    splitters = create_texts_splitters(
+
+    texts, file_names = create_texts_splitters(
         model_name="Snowflake/snowflake-arctic-embed-l-v2.0"
     )
-    print(f"Splitters: {splitters}")
-    print(f"Length of splitters: {len(splitters)}")
 
-    question = """
-    Question: A rap battle between Stephen Colbert and John Oliver
-    """
-    ans = llm.invoke(question)
-    print(f"Answer: {ans}")
+    create_vector_db(
+        texts=texts,
+        file_names=file_names,
+        embeddings=load_embeddings_model(
+            model_id="Qwen/Qwen3-Embedding-8B-GGUF",
+            model_filename="Qwen3-Embedding-8B-Q4_K_M.gguf",
+        ),
+    )
 
 
 if __name__ == "__main__":
