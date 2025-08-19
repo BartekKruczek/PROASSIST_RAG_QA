@@ -3,6 +3,7 @@ include = [
     "RAG_QA/**",
     "utils/**",
     "logger/**",
+    "README.md",
 ]
 exclude = [
     "docs/**",
