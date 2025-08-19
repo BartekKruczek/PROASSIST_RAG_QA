@@ -78,7 +78,7 @@ def load_embeddings_model(**kwargs) -> LlamaCppEmbeddings:
     return llm_embeddings
 
 
-def load_sentence_transformers_model(**kwargs):
+def load_sentence_transformers_model(**kwargs) -> SentenceTransformersTokenTextSplitter:
     """
     Load the sentence transformers model from local cache.
 

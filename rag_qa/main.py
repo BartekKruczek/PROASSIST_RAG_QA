@@ -4,8 +4,8 @@ from logger.create_logger import create_logger
 from utils.model_loader.loader import (
     load_chat_model,
     load_embeddings_model,
-    load_sentence_transformers_model,
 )
+from utils.text_splitter.splitter import create_texts_splitters
 
 
 def main():
@@ -21,9 +21,11 @@ def main():
         model_id="Qwen/Qwen3-Embedding-8B-GGUF",
         model_filename="Qwen3-Embedding-8B-Q4_K_M.gguf",
     )
-    load_sentence_transformers_model(
-        model_name="Snowflake/snowflake-arctic-embed-l-v2.0",
+    splitters = create_texts_splitters(
+        model_name="Snowflake/snowflake-arctic-embed-l-v2.0"
     )
+    print(f"Splitters: {splitters}")
+    print(f"Length of splitters: {len(splitters)}")
 
     question = """
     Question: A rap battle between Stephen Colbert and John Oliver
