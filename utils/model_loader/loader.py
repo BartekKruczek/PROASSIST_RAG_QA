@@ -2,6 +2,7 @@ import os
 
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 
+from langchain_community.embeddings import LlamaCppEmbeddings
 from langchain_community.llms.llamacpp import LlamaCpp
 from llama_cpp import Llama
 
@@ -52,3 +53,22 @@ def load_chat_model(**kwargs) -> LlamaCpp:
     )
 
     return llm
+
+
+def load_embeddings_model(**kwargs) -> LlamaCppEmbeddings:
+    """
+    Load the embeddings model from local cache.
+
+    Args:
+        **kwargs: Additional keyword arguments for downloading the embeddings model.
+
+    Returns:
+        LlamaCppEmbeddings: An instance of the Llama embeddings model.
+    """
+    download_path: str = _download_model_from_hf_hub(**kwargs)
+
+    llm_embeddings = LlamaCppEmbeddings(
+        model_path=download_path,
+    )
+
+    return llm_embeddings

@@ -1,7 +1,7 @@
 from langchain.globals import set_verbose
 
 from logger.create_logger import create_logger
-from utils.model_loader.loader import load_chat_model
+from utils.model_loader.loader import load_chat_model, load_embeddings_model
 
 
 def main():
@@ -13,6 +13,10 @@ def main():
 
     llm = load_chat_model(
         max_tokens=16384,
+    )
+    load_embeddings_model(
+        model_id="Qwen/Qwen3-Embedding-8B-GGUF",
+        model_filename="Qwen3-Embedding-8B-Q4_K_M.gguf",
     )
 
     question = """
