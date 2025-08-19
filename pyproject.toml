@@ -10,6 +10,8 @@ dependencies = [
     "huggingface-hub[hf-transfer]>=0.34.4",
     "langchain>=0.3.27",
     "langchain-community>=0.3.27",
+    "langchain-text-splitters>=0.3.9",
     "llama-cpp-python>=0.3.16",
     "pre-commit>=4.3.0",
+    "sentence-transformers>=5.1.0",
 ]

@@ -1,15 +1,19 @@
 import os
 
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
+os.environ["HF_HOME"] = "./cache"
 
 from langchain_community.embeddings import LlamaCppEmbeddings
 from langchain_community.llms.llamacpp import LlamaCpp
+from langchain_text_splitters.sentence_transformers import (
+    SentenceTransformersTokenTextSplitter,
+)
 from llama_cpp import Llama
 
 
 def _download_model_from_hf_hub(
     model_id: str = "unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF",
-    download_path: str = "./cache/llama_cpp",
+    download_path: str = os.getenv("HF_HOME"),
     model_filename: str = "Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf",
     **kwargs,
 ) -> str:
@@ -72,3 +76,22 @@ def load_embeddings_model(**kwargs) -> LlamaCppEmbeddings:
     )
 
     return llm_embeddings
+
+
+def load_sentence_transformers_model(**kwargs):
+    """
+    Load the sentence transformers model from local cache.
+
+    Args:
+        **kwargs: Additional keyword arguments for downloading the sentence transformers model.
+
+    Returns:
+        SentenceTransformersTokenTextSplitter: An instance of the sentence transformers model.
+    """
+    text_splitter = SentenceTransformersTokenTextSplitter(
+        chunk_size=512,
+        chunk_overlap=50,
+        **kwargs,
+    )
+
+    return text_splitter
