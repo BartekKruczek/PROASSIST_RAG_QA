@@ -34,7 +34,7 @@ def create_texts_splitters(**kwargs) -> tuple[list[list[str]], list[str]]:
     file_names: list[str] = []
 
     for file_name in os.listdir(folder_path):
-        if file_name.endswith(".txt"):
+        if file_name.endswith(".md"):
             file_path = os.path.join(folder_path, file_name)
             text_content = _get_text_from_file(file_path)
             text_splitter = model_splitter.split_text(text_content)

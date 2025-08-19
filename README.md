@@ -14,3 +14,5 @@ This repository contains a Python implementation of a Retrieval-Augmented Genera
 - Add CLI parser for user input. It would give more flexibility and control over workflow.
 
 ## Summary
+
+## References
