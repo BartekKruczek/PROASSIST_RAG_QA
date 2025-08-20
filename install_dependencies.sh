@@ -14,20 +14,17 @@ fi
 
 export CUDA_INSTALLED=$cuda_installed
 
-# export repo folder to PYTHONPATH
-export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$(pwd)"
-
 # install dependencies based on CUDA installation
 if [ $cuda_installed -eq 1 ]; then
     uv sync --extra gpu
     echo "UV sync with GPU support"
 
-    pip install flash-attn --no-build-isolation
-    echo "Flash attention installed"
+    # pip install flash-attn --no-build-isolation
+    # echo "Flash attention installed"
 
-    export FAISS_ENABLE_GPU=ON FAISS_OPT_LEVEL=avx512 FAISS_ENABLE_CUVS=ON
-    pip install --no-binary :all: faiss-cpu
-    echo "FAISS with GPU support installed"
+    # export FAISS_ENABLE_GPU=ON FAISS_OPT_LEVEL=avx512 FAISS_ENABLE_CUVS=ON
+    # pip install --no-binary :all: faiss-cpu
+    # echo "FAISS with GPU support installed"
 else
     uv sync
     echo "UV sync without GPU support"

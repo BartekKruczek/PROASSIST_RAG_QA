@@ -1558,18 +1558,15 @@ dependencies = [
     { name = "sentence-transformers" },
 ]
 
-[package.optional-dependencies]
-gpu = [
-    { name = "ninja" },
-    { name = "packaging" },
-    { name = "setuptools" },
-    { name = "torch" },
-]
-
 [package.dev-dependencies]
 cpu = [
     { name = "faiss-cpu" },
     { name = "llama-cpp-python" },
+]
+gpu = [
+    { name = "ninja" },
+    { name = "packaging" },
+    { name = "setuptools" },
 ]
 
 [package.metadata]
@@ -1580,19 +1577,19 @@ requires-dist = [
     { name = "langchain-community", specifier = ">=0.3.27" },
     { name = "langchain-text-splitters", specifier = ">=0.3.9" },
     { name = "logger", specifier = ">=1.4" },
-    { name = "ninja", marker = "extra == 'gpu'", specifier = ">=1.13.0" },
-    { name = "packaging", marker = "extra == 'gpu'", specifier = ">=25.0" },
     { name = "pre-commit", specifier = ">=4.3.0" },
     { name = "sentence-transformers", specifier = ">=5.1.0" },
-    { name = "setuptools", marker = "extra == 'gpu'", specifier = ">=80.9.0" },
-    { name = "torch", marker = "extra == 'gpu'", specifier = ">=2.8.0" },
 ]
-provides-extras = ["gpu"]
 
 [package.metadata.requires-dev]
 cpu = [
     { name = "faiss-cpu", specifier = ">=1.12.0" },
     { name = "llama-cpp-python", specifier = ">=0.3.16" },
+]
+gpu = [
+    { name = "ninja", specifier = ">=1.13.0" },
+    { name = "packaging", specifier = ">=25.0" },
+    { name = "setuptools", specifier = ">=80.9.0" },
 ]
 
 [[package]]

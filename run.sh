@@ -1,4 +1,6 @@
 #!/bin/bash
 
+export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$(pwd)"
+
 # run script
-uv run raq_qa/main.py
+python -m rag_qa.main

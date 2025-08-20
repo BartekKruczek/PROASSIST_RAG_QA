@@ -15,20 +15,17 @@ dependencies = [
     "sentence-transformers>=5.1.0",
 ]
 
-[project.optional-dependencies]
-gpu = [
-    "ninja>=1.13.0",
-    "packaging>=25.0",
-    "setuptools>=80.9.0",
-    "torch>=2.8.0",
-]
-
 [dependency-groups]
 cpu = [
     "llama-cpp-python>=0.3.16",
     "faiss-cpu>=1.12.0",
 ]
 
+gpu = [
+    "ninja>=1.13.0",
+    "packaging>=25.0",
+    "setuptools>=80.9.0",
+]
+
 [tool.uv]
-no-build-isolation-package = ['flash-attn']
 default-groups = ['cpu']
