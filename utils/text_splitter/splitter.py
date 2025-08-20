@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from utils.model_loader.loader import load_sentence_transformers_model
 
@@ -29,13 +30,15 @@ def create_texts_splitters(**kwargs) -> tuple[list[list[str]], list[str]]:
                           the content of a file split into chunks.
     """
     model_splitter = load_sentence_transformers_model(**kwargs)
-    folder_path: str = "./docs/"
     texts_splitters: list[list[str]] = []
     file_names: list[str] = []
 
+    project_root = Path(__file__).resolve().parents[2]
+    folder_path = project_root / "docs"
+
     for file_name in os.listdir(folder_path):
         if file_name.endswith(".md"):
-            file_path = os.path.join(folder_path, file_name)
+            file_path = folder_path / file_name
             text_content = _get_text_from_file(file_path)
             text_splitter = model_splitter.split_text(text_content)
             texts_splitters.append(text_splitter)
