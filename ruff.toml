@@ -5,6 +5,7 @@ include = [
     "logger/**",
     "README.md",
     "run.sh",
+    "install_dependencies.sh",
 ]
 exclude = [
     "docs/**",
