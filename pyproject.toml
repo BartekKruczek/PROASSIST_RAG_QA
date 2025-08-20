@@ -15,7 +15,7 @@ dependencies = [
     "sentence-transformers>=5.1.0",
 ]
 
-[dependency-groups]
+[project.optional-dependencies]
 cpu = [
     "llama-cpp-python>=0.3.16",
     "faiss-cpu>=1.12.0",
@@ -26,6 +26,3 @@ gpu = [
     "packaging>=25.0",
     "setuptools>=80.9.0",
 ]
-
-[tool.uv]
-default-groups = ['cpu']
