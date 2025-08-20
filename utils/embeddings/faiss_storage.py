@@ -1,5 +1,5 @@
 from langchain.schema import Document
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 
 
 def create_vector_db(
