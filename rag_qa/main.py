@@ -1,3 +1,5 @@
+import os
+
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.globals import set_verbose
@@ -12,17 +14,39 @@ from utils.model_loader.loader import (
 from utils.text_splitter.splitter import create_texts_splitters
 
 
+def get_gpu_config() -> dict:
+    """
+    Return the configuration for the chat model if running on GPU.
+    """
+    cnfg = {
+        "n_gpu_layers": -1,
+        "flash_attn": True,
+        "use_mlock": True,
+    }
+
+    return cnfg
+
+
 def main():
     """
     Execute the rag_qa pipeline.
     """
     set_verbose(False)
 
-    chat_llm = load_chat_model(
-        max_tokens=1024,
-        n_ctx=32768,
-        n_threads=12,
-    )
+    if os.getenv("CUDA_INSTALLED") == "1":
+        cnfg = get_gpu_config()
+        chat_llm = load_chat_model(
+            max_tokens=2048,
+            n_ctx=32768,
+            verbose=False,
+            **cnfg,
+        )
+    else:
+        chat_llm = load_chat_model(
+            max_tokens=2048,
+            n_ctx=32768,
+            verbose=False,
+        )
 
     texts, file_names = create_texts_splitters(
         model_name="Snowflake/snowflake-arctic-embed-l-v2.0"
@@ -34,6 +58,7 @@ def main():
         embeddings=load_embeddings_model(
             model_id="Qwen/Qwen3-Embedding-0.6B-GGUF",
             model_filename="Qwen3-Embedding-0.6B-Q8_0.gguf",
+            verbose=False,
         ),
     ).as_retriever(search_kwargs={"k": 3})
 
