@@ -36,7 +36,7 @@ def main():
     cnfg = get_gpu_config()
     chat_llm = load_chat_model(
         max_tokens=2048,
-        n_ctx=32768,
+        n_ctx=40960,
         verbose=False,
         n_gpu_layers=cnfg["n_gpu_layers"],
         use_mlock=cnfg["use_mlock"],
@@ -44,7 +44,7 @@ def main():
 
     # warm up the model
     print("Warming up the chat model...")
-    chat_llm.invoke("Warming up the chat model... OK")
+    print(chat_llm("What is the capital of Poland?")["choices"][0]["text"])
 
     texts, file_names = create_texts_splitters(
         model_name="Snowflake/snowflake-arctic-embed-l-v2.0"
