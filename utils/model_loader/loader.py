@@ -11,7 +11,7 @@ os.environ["HF_HOME"] = MODEL_DIR
 
 
 def load_chat_model(
-    model_filename: str = "Qwen3-4B-Q4_K_M.gguf",
+    model_filename: str = "Qwen3-14B-Q6_K.gguf",
     **kwargs,
 ) -> LlamaCpp:
     """
@@ -29,7 +29,7 @@ def load_chat_model(
 
 
 def load_embeddings_model(
-    model_filename: str = "Qwen3-Embedding-0.6B-Q8_0.gguf",
+    model_filename: str = "Qwen3-Embedding-0.6B-f16.gguf",
     **kwargs,
 ) -> LlamaCppEmbeddings:
     """
@@ -46,18 +46,22 @@ def load_embeddings_model(
     return LlamaCppEmbeddings(model_path=model_path, **kwargs)
 
 
-def load_sentence_transformers_model(**kwargs) -> SentenceTransformersTokenTextSplitter:
+def load_sentence_transformers_model(
+    model_name: str = "Snowflake/snowflake-arctic-embed-l-v2.0", **kwargs
+) -> SentenceTransformersTokenTextSplitter:
     """
     Load a SentenceTransformersTokenTextSplitter with default parameters.
 
     Args:
+        model_name (str): The name of the SentenceTransformers model to load.
         **kwargs: Additional keyword arguments for SentenceTransformersTokenTextSplitter.
 
     Returns:
         SentenceTransformersTokenTextSplitter: An instance of the text splitter with specified chunk size and overlap.
     """
     return SentenceTransformersTokenTextSplitter(
-        chunk_size=1024,
+        model_name=model_name,
+        chunk_size=256,
         chunk_overlap=50,
         **kwargs,
     )
