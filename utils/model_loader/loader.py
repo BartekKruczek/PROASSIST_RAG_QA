@@ -4,6 +4,7 @@ os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 os.environ["HF_HOME"] = "./cache"
 
 from langchain_community.embeddings import LlamaCppEmbeddings
+from langchain_community.llms.llamacpp import LlamaCpp
 from langchain_text_splitters.sentence_transformers import (
     SentenceTransformersTokenTextSplitter,
 )
@@ -56,7 +57,7 @@ def load_chat_model(
     Returns:
         Llama: An instance of the Llama model.
     """
-    llm = Llama.from_pretrained(
+    llm = LlamaCpp(
         repo_id=model_id,
         local_dir=download_path,
         filename=model_filename,

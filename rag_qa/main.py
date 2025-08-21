@@ -57,6 +57,8 @@ def main():
             model_id="Qwen/Qwen3-Embedding-0.6B-GGUF",
             model_filename="Qwen3-Embedding-0.6B-Q8_0.gguf",
             n_gpu_layers=cnfg["n_gpu_layers"],
+            use_mlock=cnfg["use_mlock"],
+            n_ctx=32768,
             verbose=False,
         ),
     ).as_retriever(search_kwargs={"k": 1})
