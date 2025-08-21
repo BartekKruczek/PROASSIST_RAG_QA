@@ -22,7 +22,6 @@ def get_gpu_config() -> dict:
         "flash_attn": True,
         "use_mlock": True,
     }
-
     return cnfg
 
 
@@ -32,8 +31,8 @@ def main():
     """
     set_verbose(True)
     set_debug(True)
-
     cnfg = get_gpu_config()
+
     chat_llm = load_chat_model(
         max_tokens=2048,
         n_ctx=40960,
@@ -42,9 +41,9 @@ def main():
         use_mlock=cnfg["use_mlock"],
     )
 
-    # warm up the model
     print("Warming up the chat model...")
-    print(chat_llm("What is the capital of Poland?")["choices"][0]["text"])
+    response = chat_llm.invoke("What is the capital of Poland?")
+    print(response)
 
     texts, file_names = create_texts_splitters(
         model_name="Snowflake/snowflake-arctic-embed-l-v2.0"
@@ -69,12 +68,14 @@ def main():
         "Use three sentence maximum and keep the answer concise. "
         "Context: {context}"
     )
+
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", system_prompt),
             ("human", "{input}"),
         ]
     )
+
     question_answer_chain = create_stuff_documents_chain(chat_llm, prompt)
     chain = create_retrieval_chain(retriever, question_answer_chain)
 
