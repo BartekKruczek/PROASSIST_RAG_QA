@@ -1,6 +1,7 @@
+from langchain.callbacks.tracers import ConsoleCallbackHandler
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.globals import set_verbose
+from langchain.globals import set_debug, set_verbose
 from langchain_core.prompts import ChatPromptTemplate
 
 from logger.create_logger import create_logger
@@ -29,7 +30,8 @@ def main():
     """
     Execute the rag_qa pipeline.
     """
-    set_verbose(False)
+    set_verbose(True)
+    set_debug(True)
 
     cnfg = get_gpu_config()
     chat_llm = load_chat_model(
@@ -57,7 +59,7 @@ def main():
             n_gpu_layers=cnfg["n_gpu_layers"],
             verbose=False,
         ),
-    ).as_retriever(search_kwargs={"k": 3})
+    ).as_retriever(search_kwargs={"k": 1})
 
     system_prompt = (
         "Use the given context to answer the question. "
@@ -77,7 +79,9 @@ def main():
     print("RAG_QA application is ready to answer questions.")
 
     question = "Kto stworzył PLLuM?"
-    response = chain.invoke({"input": question})
+    response = chain.invoke(
+        {"input": question}, config={"callbacks": [ConsoleCallbackHandler()]}
+    )
     print(f"Question: {question}")
     print(f"Response: {response}")
 
