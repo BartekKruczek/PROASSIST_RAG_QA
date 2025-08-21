@@ -6,26 +6,26 @@ from langchain_text_splitters.sentence_transformers import (
     SentenceTransformersTokenTextSplitter,
 )
 
+MODEL_DIR = os.getenv("HF_HOME", "./cache")
+os.environ["HF_HOME"] = MODEL_DIR
+
 
 def load_chat_model(
     model_filename: str = "Qwen3-4B-Q4_K_M.gguf",
     **kwargs,
 ) -> LlamaCpp:
     """
-    Load the chat model from local cache.
+    Load a chat model from the specified filename in the MODEL_DIR.
 
     Args:
-        model_filename (str): The name of the file to save the model as.
-        **kwargs: Additional keyword arguments for the LlamaCpp model.
+        model_filename (str): The name of the model file to load.
+        **kwargs: Additional keyword arguments for LlamaCpp.
 
     Returns:
-        LlamaCpp: An instance of the LlamaCpp model.
+        LlamaCpp: An instance of the LlamaCpp model loaded from the specified file.
     """
-    llm = LlamaCpp(
-        model_path=os.getenv("HF_HOME", "./models") + "/" + model_filename,
-        **kwargs,
-    )
-    return llm
+    model_path = os.path.join(MODEL_DIR, model_filename)
+    return LlamaCpp(model_path=model_path, **kwargs)
 
 
 def load_embeddings_model(
@@ -33,35 +33,31 @@ def load_embeddings_model(
     **kwargs,
 ) -> LlamaCppEmbeddings:
     """
-    Load the embeddings model from local cache.
+    Load an embeddings model from the specified filename in the MODEL_DIR.
 
     Args:
-        model_filename (str): The name of the file to save the model as.
-        **kwargs: Additional keyword arguments for downloading the embeddings model.
+        model_filename (str): The name of the model file to load.
+        **kwargs: Additional keyword arguments for LlamaCppEmbeddings.
 
     Returns:
-        LlamaCppEmbeddings: An instance of the Llama embeddings model.
+        LlamaCppEmbeddings: An instance of the LlamaCppEmbeddings model loaded from the specified file.
     """
-    llm_embeddings = LlamaCppEmbeddings(
-        model_path=os.getenv("HF_HOME", "./models") + "/" + model_filename,
-        **kwargs,
-    )
-    return llm_embeddings
+    model_path = os.path.join(MODEL_DIR, model_filename)
+    return LlamaCppEmbeddings(model_path=model_path, **kwargs)
 
 
 def load_sentence_transformers_model(**kwargs) -> SentenceTransformersTokenTextSplitter:
     """
-    Load the sentence transformers model from local cache.
+    Load a SentenceTransformersTokenTextSplitter with default parameters.
 
     Args:
-        **kwargs: Additional keyword arguments for the sentence transformers model.
+        **kwargs: Additional keyword arguments for SentenceTransformersTokenTextSplitter.
 
     Returns:
-        SentenceTransformersTokenTextSplitter: An instance of the sentence transformers model.
+        SentenceTransformersTokenTextSplitter: An instance of the text splitter with specified chunk size and overlap.
     """
-    text_splitter = SentenceTransformersTokenTextSplitter(
+    return SentenceTransformersTokenTextSplitter(
         chunk_size=1024,
         chunk_overlap=50,
         **kwargs,
     )
-    return text_splitter
