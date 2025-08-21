@@ -49,9 +49,9 @@ def main():
     _download_model_from_hf_hub(model_id, download_path, model_filename)
 
     # embeddings model parameters
-    model_id: str = ("Qwen/Qwen3-Embedding-0.6B-GGUF",)
-    download_path: str = (os.getenv("HF_HOME", "./models"),)
-    model_filename: str = ("Qwen3-Embedding-0.6B-Q8_0.gguf",)
+    model_id: str = "Qwen/Qwen3-Embedding-0.6B-GGUF"
+    download_path: str = os.getenv("HF_HOME", "./models")
+    model_filename: str = "Qwen3-Embedding-0.6B-Q8_0.gguf"
 
     os.makedirs(download_path, exist_ok=True)
     _download_model_from_hf_hub(model_id, download_path, model_filename)
