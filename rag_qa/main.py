@@ -36,8 +36,13 @@ def main():
         max_tokens=2048,
         n_ctx=32768,
         verbose=False,
-        **cnfg,
+        n_gpu_layers=cnfg["n_gpu_layers"],
+        use_mlock=cnfg["use_mlock"],
     )
+
+    # warm up the model
+    print("Warming up the chat model...")
+    chat_llm.invoke("Warming up the chat model... OK")
 
     texts, file_names = create_texts_splitters(
         model_name="Snowflake/snowflake-arctic-embed-l-v2.0"
@@ -49,6 +54,7 @@ def main():
         embeddings=load_embeddings_model(
             model_id="Qwen/Qwen3-Embedding-0.6B-GGUF",
             model_filename="Qwen3-Embedding-0.6B-Q8_0.gguf",
+            n_gpu_layers=cnfg["n_gpu_layers"],
             verbose=False,
         ),
     ).as_retriever(search_kwargs={"k": 3})
