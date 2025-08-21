@@ -53,8 +53,6 @@ def main():
         texts=texts,
         file_names=file_names,
         embeddings=load_embeddings_model(
-            model_id="Qwen/Qwen3-Embedding-0.6B-GGUF",
-            model_filename="Qwen3-Embedding-0.6B-Q8_0.gguf",
             n_gpu_layers=cnfg["n_gpu_layers"],
             use_mlock=cnfg["use_mlock"],
             n_ctx=32768,
