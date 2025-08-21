@@ -20,6 +20,9 @@ def _download_model_from_hf_hub(
         repo_id=model_id,
         local_dir=download_path,
         filename=model_filename,
+        n_gpu_layers=-1,
+        use_mlock=True,
+        n_ctx=32768,
     )
     print(
         f"Model {model_id} downloaded and saved to {os.path.join(download_path, model_filename)}"
