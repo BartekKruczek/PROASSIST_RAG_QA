@@ -2,6 +2,9 @@ import os
 
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 os.environ["HF_HOME"] = "./cache"
+
+import gc
+
 from langchain_community.embeddings import LlamaCppEmbeddings
 from langchain_community.llms.llamacpp import LlamaCpp
 from langchain_text_splitters.sentence_transformers import (
@@ -28,12 +31,17 @@ def _download_model_from_hf_hub(
     Returns:
         str: The full local path to the downloaded model file.
     """
-    Llama.from_pretrained(
+    tmp_llm = Llama.from_pretrained(
         repo_id=model_id,
         local_dir=download_path,
         filename=model_filename,
         **kwargs,
     )
+
+    # free up memory
+    del tmp_llm
+    gc.collect()
+
     return os.path.join(download_path, model_filename)
 
 
