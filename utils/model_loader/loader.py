@@ -12,9 +12,9 @@ from llama_cpp import Llama
 
 
 def _download_model_from_hf_hub(
-    model_id: str = "Qwen/Qwen3-8B-GGUF",
+    model_id: str = "Qwen/Qwen3-4B-GGUF",
     download_path: str = os.getenv("HF_HOME"),
-    model_filename: str = "Qwen3-8B-Q4_K_M.gguf",
+    model_filename: str = "Qwen3-4B-Q4_K_M.gguf",
     **kwargs,
 ) -> str:
     """
