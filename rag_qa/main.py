@@ -42,7 +42,7 @@ def main():
     )
 
     print("Warming up the chat model...")
-    response = chat_llm.invoke("What is the capital of Poland?")
+    response = chat_llm.invoke("Warming up the chat model... OK")
     print(response)
 
     texts, file_names = create_texts_splitters(
