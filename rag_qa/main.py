@@ -62,6 +62,12 @@ def get_argument_parser() -> argparse.ArgumentParser:
         default={},
         help="Additional keyword arguments for the text splitter.",
     )
+    parser.add_argument(
+        "--question",
+        type=str,
+        required=True,
+        help="The question to ask the RAG_QA application.",
+    )
 
     return parser.parse_args()
 
@@ -77,16 +83,25 @@ def main():
 
     chat_llm = load_chat_model(
         model_filename=args.chat_model_filename,
-        max_tokens=512,
-        n_ctx=32768,
+        temperature=0.01,
+        top_p=0.95,
+        repeat_penalty=1.1,
+        max_tokens=128,
         verbose=False,
         n_gpu_layers=-1,
         use_mlock=True,
-        **args.chat_model_kwargs,
+        n_ctx=32768,
+        yarn_orig_ctx=32768,
+        rope_scaling_type=2,
+        yarn_attn_factor=4.0,
+        model_kwargs={
+            "chat_format": "chatml",
+            **args.chat_model_kwargs,
+        },
     )
 
     print("Warming up the chat model...")
-    response = chat_llm.invoke("Co jest stolicą Polski?")
+    response = chat_llm.invoke("Co jest stolicą Polski? /no_think")
     print(response)
 
     texts, file_names = create_texts_splitters(
@@ -107,12 +122,20 @@ def main():
         ),
     ).as_retriever(search_kwargs={"k": 1})
 
+    # check what retriever returns
+    print("Retrieving documents for the question...")
+    docs = retriever.get_relevant_documents(args.question)
+    for doc in docs:
+        print(f"Retrieved document: {doc.page_content[:100]}...", doc.metadata)
+
     system_prompt = (
-        "Use the given context to answer the question. "
-        "If you don't know the answer, say you don't know. "
-        "Keep answer short. "
-        "Answer in Polish. "
-        "Context: {context}"
+        "Jesteś asystentem QA. "
+        "Odpowiadaj WYŁĄCZNIE jednym krótkim zdaniem. "
+        "Jeśli nie znasz odpowiedzi, napisz: 'Nie wiem'. "
+        "Nie pokazuj swojego rozumowania. "
+        "Odpowiadaj wyłącznie gotową odpowiedzią. "
+        "Odpowiadaj zawsze po polsku.\n\n"
+        "Kontekst: {context}"
     )
 
     prompt = ChatPromptTemplate.from_messages(
@@ -122,12 +145,14 @@ def main():
         ]
     )
 
-    question_answer_chain = create_stuff_documents_chain(chat_llm, prompt)
+    question_answer_chain = create_stuff_documents_chain(
+        chat_llm, prompt, document_variable_name="context"
+    )
     chain = create_retrieval_chain(retriever, question_answer_chain)
 
     print("RAG_QA application is ready to answer questions.")
 
-    question = "Kto stworzył PLLuM?"
+    question = args.question
     response = chain.invoke(
         {"input": question}, config={"callbacks": [ConsoleCallbackHandler()]}
     )

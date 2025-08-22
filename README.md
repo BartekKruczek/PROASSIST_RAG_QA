@@ -49,6 +49,7 @@ It is worth to mention that there are some CLI options available for the `hf_dow
    - `--kwargs`: Additional keyword arguments for the `from_pretrained` method of the model. It should be provided in JSON format, e.g. `{"n_ctx": 2048}`.
 
 2. **rag_main.py**:
+   - `--question`: Required field, the question to be answered by the RAG system.
    - `--chat-model-filename`: Name of the chat model file to use for generating responses.
    - `--embedding-model-filename`: Name of the embedding model file to use for generating embeddings.
    - `--text-splitter-model-id`: Name of the text splitter model to download from Hugging Face.
@@ -65,7 +66,7 @@ uv run rag_qa/hf_download.py --chat-model-id Qwen/Qwen3-14B-GGUF --chat-model-fi
 Then you have to pass the same model filename to the `rag_main.py` script:
 
 ```bash
-uv run rag_qa/main.py --chat-model-filename Qwen3-14B-Q8_0.gguf
+uv run rag_qa/main.py --chat-model-filename Qwen3-14B-Q8_0.gguf --question "Jakie modele LLaMa są dostępne? /no_think"
 ```
 
 ## Used models
@@ -76,18 +77,63 @@ In this section, we dive into the specifics of used models. We can divide them i
 
 For inference purposes, the [Qwen3-14B](https://huggingface.co/Qwen/Qwen3-14B-GGUF) model is used. Not only it was trained on polish language dataset, but also it leverage in human preference alignment.
 
+### Embedding model
+
+Embedding model belongs to the same Qwen family as the chat model. However, this time [Qwen3-Embedding-0.6B](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B-GGUF) model is significantly smaller due to hardware limitations. To minimize possible quality losses, largest GGUF format is used, which is f16.
+
+### Text splitter model
+
+In contrast to previous two models, the text splitter [Snowflake/snowflake-arctic-embed-l-v2.0](https://huggingface.co/Snowflake/snowflake-arctic-embed-l-v2.0) model is being used in standard format, due to it's relatively small size. It's purpose is to split the input text into smaller chunks based on structure and content of the text. This is crucial for the RAG pipeline, as it allows for more efficient retrieval of relevant information.
+
 ### Hardware acceleration
 
-It is **HARDLY** recommended to use any kind of hardware acceleration, such as GPU or Metal. 
+It is **HARDLY** recommended to use any kind of hardware acceleration, such as GPU or Metal. By default, loading models, speedup is selected and fully utilized. Specified libraries should automatically detect available hardware and install necessary dependencies. However, if you are using GPU or Metal and see that only CPU is being used, please check out [this](https://llama-cpp-python.readthedocs.io/en/latest/#installation) tutorial how to install llama-cpp-python with enabled backend support.
 
 ## Asked questions
 
 Before starting RAG pipeline, simple warmup question is being provided to the chat model: `What is the capital of Poland?`. This is to ensure that the model is loaded and ready to process further queries.
 
+With given question, context was also proved. It helps the model to keep the answer short and relevant.
+```python
+"Jesteś asystentem QA. "
+"Odpowiadaj WYŁĄCZNIE jednym krótkim zdaniem. "
+"Jeśli nie znasz odpowiedzi, napisz: 'Nie wiem'. "
+"Nie pokazuj swojego rozumowania. "
+"Odpowiadaj wyłącznie gotową odpowiedzią. "
+"Odpowiadaj zawsze po polsku.\n\n"
+```
+
+In total, 6 questions were asked:
+- Jakie modele LLaMa są dostępne?
+- Kto stworzył PLLuM?
+- Jaki model najlepiej działa na GPU z 24 GB VRAM?
+
 ## Results
 
-## Future improvements
-- Add CLI parser for user input. It would give more flexibility and control over workflow.
+In this section answers with context are provided for each question. In addition, the full output of the RAG pipeline is shown in the details section.
+
+- Q: Jakie modele LLaMa są dostępne? \
+  A: Nie wiem.
+
+  <details>
+    <summary>Full output</summary>
+
+    ```python
+    [chain/end] [chain:retrieval_chain] [27.79s] Exiting Chain run with output:
+    [outputs]
+    Question: Jakie modele LLaMa są dostępne? /no_think
+    Response: {'input': 'Jakie modele LLaMa są dostępne? /no_think', 'context': [Document(id='5975868d-b0ef-4642-93d4-92994e893197', metadata={'source': 'mistal.md'}, page_content='text=Mistral%20Medium%202312%20%60mistral,latest%20%60%20Mistral%20Large%202407%E2%9C%94%EF%B8%8F. Użytkownicy powinni migrować do nowszych modeli. ## Podsumowanie Ekosystem Mistral AI rozwija się bardzo dynamicznie: od kompaktowego Mistral 7B, przez hybrydowe modele Mixtral, wyspecjalizowane Mathstral i Codestral, po multimodalne Pixtral i Voxtral, modele reasoning (Magistral), agentowe (Devstral), embeddingowe oraz usługi OCR. Wiele modeli jest open‐source (Apache 2.0), co ułatwia ich wykorzystanie w projektach RAG i lokalnych asystentach, a ich wymogi pamięci zaczynają się od 8 GB VRAM (Voxtral Mini, Ministral 3B). Modele premierowe (Medium 3, Magistral Medium, Devstral Medium, Mistral Large, Pixtral Large) dostępne są poprzez API i adresują potrzeby korporacyjne związane z niską latencją, dużym kontekstem i wielomodalnością. Dzięki licencjom badawczym i komercyjnym Mistral AI umożliwia zarówno eksperymentowanie, jak i produkcyjne zastosowania, oferując równocześnie narzędzia do własnego dostrajania (mistral‐inference, mistral‐finetune) oraz infrastruktury (Mistral Compute). ')], 'answer': '<think>\n\n</think>\n\nNie wiem.'}
+    ```
+    
+  </details>
+
+## Possible improvements
+
+Considering larger hardware possibilities, there are several improvements that could be made to the RAG pipeline:
+- increasing models sizes (thus parameters) to improve quality of the answers,
+- increasing value of `k` parameter in retrieval step to retrieve more information from the knowledge base,
+- implement reranking [step](https://huggingface.co/Qwen/Qwen3-Reranker-8B) to better validate context before passing it to the chat model,
+- implement [external graph knowledge base](https://python.langchain.com/docs/integrations/providers/neo4j/) to enhance the retrieval step based on knowledge/fact graph entities.
 
 ## Summary
 
