@@ -1,7 +1,7 @@
 import os
 
+from langchain_community.chat_models import ChatLlamaCpp
 from langchain_community.embeddings import LlamaCppEmbeddings
-from langchain_community.llms.llamacpp import LlamaCpp
 from langchain_text_splitters.sentence_transformers import (
     SentenceTransformersTokenTextSplitter,
 )
@@ -13,7 +13,7 @@ os.environ["HF_HOME"] = MODEL_DIR
 def load_chat_model(
     model_filename: str = "Qwen3-14B-Q6_K.gguf",
     **kwargs,
-) -> LlamaCpp:
+) -> ChatLlamaCpp:
     """
     Load a chat model from the specified filename in the MODEL_DIR.
 
@@ -22,10 +22,10 @@ def load_chat_model(
         **kwargs: Additional keyword arguments for LlamaCpp.
 
     Returns:
-        LlamaCpp: An instance of the LlamaCpp model loaded from the specified file.
+        ChatLlamaCpp: An instance of the LlamaCpp model loaded from the specified file.
     """
     model_path = os.path.join(MODEL_DIR, model_filename)
-    return LlamaCpp(model_path=model_path, **kwargs)
+    return ChatLlamaCpp(model_path=model_path, **kwargs)
 
 
 def load_embeddings_model(

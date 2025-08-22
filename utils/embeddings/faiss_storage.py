@@ -25,6 +25,6 @@ def create_vector_db(
             for chunk in file_chunks
         )
 
-    vector_db = FAISS.from_documents(documents, embeddings)
+    vector_db = FAISS.from_documents(documents, embeddings, distance_strategy="COSINE")
 
     return vector_db
