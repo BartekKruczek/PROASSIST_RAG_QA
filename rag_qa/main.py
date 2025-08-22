@@ -77,8 +77,8 @@ def main():
 
     chat_llm = load_chat_model(
         model_filename=args.chat_model_filename,
-        max_tokens=256,
-        n_ctx=40960,
+        max_tokens=512,
+        n_ctx=32768,
         verbose=False,
         n_gpu_layers=-1,
         use_mlock=True,
@@ -101,11 +101,11 @@ def main():
             model_filename=args.embedding_model_filename,
             n_gpu_layers=-1,
             use_mlock=True,
-            n_ctx=40960,
+            n_ctx=32768,
             verbose=False,
             **args.embedding_model_kwargs,
         ),
-    ).as_retriever(search_kwargs={"k": 3})
+    ).as_retriever(search_kwargs={"k": 1})
 
     system_prompt = (
         "Use the given context to answer the question. "
