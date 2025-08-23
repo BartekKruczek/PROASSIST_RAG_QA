@@ -6,8 +6,12 @@ import argparse
 import json
 
 from langchain.callbacks.tracers import ConsoleCallbackHandler
-from langchain.chains import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains.combine_documents.map_reduce import (
+    MapReduceDocumentsChain,
+    ReduceDocumentsChain,
+)
+from langchain.chains.combine_documents.stuff import StuffDocumentsChain
+from langchain.chains.llm import LLMChain
 from langchain.globals import set_debug, set_verbose
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -120,41 +124,67 @@ def main():
             verbose=False,
             **args.embedding_model_kwargs,
         ),
-    ).as_retriever(search_kwargs={"k": 1})
+    ).as_retriever(search_kwargs={"k": 2})
 
     # check what retriever returns
     print("Retrieving documents for the question...")
-    docs = retriever.get_relevant_documents(args.question)
+    docs = retriever.invoke(args.question)
     for doc in docs:
         print(f"Retrieved document: {doc.page_content[:100]}...", doc.metadata)
 
     system_prompt = (
-        "Jesteś asystentem QA. "
-        "Odpowiadaj WYŁĄCZNIE jednym krótkim zdaniem. "
-        "Jeśli nie znasz odpowiedzi, napisz: 'Nie wiem'. "
-        "Nie pokazuj swojego rozumowania. "
-        "Odpowiadaj wyłącznie gotową odpowiedzią. "
-        "Odpowiadaj zawsze po polsku.\n\n"
-        "Kontekst: {context}"
+        "Jesteś asystentem QA. </no_think> "
+        "Odpowiadaj WYŁĄCZNIE jednym krótkim zdaniem. </no_think> "
+        "Jeśli nie znasz odpowiedzi, napisz: 'Nie wiem'. </no_think> "
+        "Nie pokazuj swojego rozumowania. </no_think> "
+        "Odpowiadaj wyłącznie gotową odpowiedzią. </no_think> "
+        "Odpowiadaj zawsze po polsku.\n\n </no_think> "
+        "Kontekst: {input_documents}\n\n </no_think> "
     )
 
-    prompt = ChatPromptTemplate.from_messages(
+    map_prompt = ChatPromptTemplate.from_messages(
         [
             ("system", system_prompt),
-            ("human", "{input}"),
+            ("human", "{input_documents}\n\nPytanie: {question}"),
+        ]
+    )
+    reduce_prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "Podsumuj wszystkie odpowiedzi w jedno krótkie zdanie. </no_think>",
+            ),
+            ("human", "{summaries}"),
         ]
     )
 
-    question_answer_chain = create_stuff_documents_chain(
-        chat_llm, prompt, document_variable_name="context"
+    map_chain = LLMChain(llm=chat_llm, prompt=map_prompt, verbose=True)
+    reduce_llm_chain = LLMChain(llm=chat_llm, prompt=reduce_prompt, verbose=True)
+
+    combine_documents_chain = StuffDocumentsChain(
+        llm_chain=reduce_llm_chain, document_variable_name="summaries", verbose=True
     )
-    chain = create_retrieval_chain(retriever, question_answer_chain)
+    reduce_documents_chain = ReduceDocumentsChain(
+        combine_documents_chain=combine_documents_chain,
+        collapse_documents_chain=combine_documents_chain,
+        token_max=200,
+    )
+
+    map_reduce_chain = MapReduceDocumentsChain(
+        llm_chain=map_chain,
+        reduce_documents_chain=reduce_documents_chain,
+        document_variable_name="input_documents",
+        verbose=True,
+    )
 
     print("RAG_QA application is ready to answer questions.")
 
     question = args.question
-    response = chain.invoke(
-        {"input": question}, config={"callbacks": [ConsoleCallbackHandler()]}
+    retrieved_docs = retriever.invoke(question)
+
+    response = map_reduce_chain.invoke(
+        {"input_documents": retrieved_docs, "question": question},
+        config={"callbacks": [ConsoleCallbackHandler()]},
     )
     print(f"Question: {question}")
     print(f"Response: {response}")
