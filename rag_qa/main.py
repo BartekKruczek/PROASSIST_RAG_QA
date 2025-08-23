@@ -33,38 +33,30 @@ def get_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--chat-model-filename",
         type=str,
+        required=False,
         default="Qwen3-14B-Q6_K.gguf",
         help="Filename for the chat model.",
     )
     parser.add_argument(
         "--embedding-model-filename",
         type=str,
+        required=False,
         default="Qwen3-Embedding-0.6B-f16.gguf",
         help="Filename for the embedding model.",
-    )
-    parser.add_argument(
-        "--text-splitter-model-id",
-        type=str,
-        default="Snowflake/snowflake-arctic-embed-l-v2.0",
-        help="Hugging Face model ID for the text splitter.",
     )
     parser.add_argument(
         "--chat-model-kwargs",
         type=json.loads,
         default={},
+        required=False,
         help="Additional keyword arguments for the chat model.",
     )
     parser.add_argument(
         "--embedding-model-kwargs",
         type=json.loads,
         default={},
+        required=False,
         help="Additional keyword arguments for the embedding model.",
-    )
-    parser.add_argument(
-        "--text-splitter-kwargs",
-        type=json.loads,
-        default={},
-        help="Additional keyword arguments for the text splitter.",
     )
     parser.add_argument(
         "--question",
@@ -108,23 +100,20 @@ def main():
     response = chat_llm.invoke("Co jest stolicą Polski? /no_think")
     print(response)
 
-    texts, file_names = create_texts_splitters(
-        model_name=args.text_splitter_model_id,
-        **args.text_splitter_kwargs,
-    )
+    flat_doc_list = create_texts_splitters()
 
     retriever = create_vector_db(
-        texts=texts,
-        file_names=file_names,
+        flat_doc_list=flat_doc_list,
         embeddings=load_embeddings_model(
             model_filename=args.embedding_model_filename,
             n_gpu_layers=-1,
             use_mlock=True,
             n_ctx=32768,
+            n_batch=32,
             verbose=False,
             **args.embedding_model_kwargs,
         ),
-    ).as_retriever(search_kwargs={"k": 2})
+    ).as_retriever(search_kwargs={"k": 3})
 
     # check what retriever returns
     print("Retrieving documents for the question...")
@@ -169,7 +158,6 @@ def main():
         collapse_documents_chain=combine_documents_chain,
         token_max=200,
     )
-
     map_reduce_chain = MapReduceDocumentsChain(
         llm_chain=map_chain,
         reduce_documents_chain=reduce_documents_chain,
