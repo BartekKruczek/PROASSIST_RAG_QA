@@ -1,7 +1,10 @@
+import itertools
 import os
 from pathlib import Path
 
-from utils.model_loader.loader import load_sentence_transformers_model
+from langchain.schema import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_text_splitters.markdown import MarkdownHeaderTextSplitter
 
 
 def _get_text_from_file(file_path: str) -> str:
@@ -18,20 +21,29 @@ def _get_text_from_file(file_path: str) -> str:
         return file.read()
 
 
-def create_texts_splitters(**kwargs) -> tuple[list[list[str]], list[str]]:
+def create_texts_splitters() -> list[Document]:
     """
     Create a list of text splitters based on the content of files in the 'data' directory.
 
-    Args:
-        **kwargs: Additional keyword arguments for the text splitter.
-
     Returns:
-        list[list[str]]: A list containing lists of strings, where each inner list represents
+        list[Document]: A list containing lists of strings, where each inner list represents
                           the content of a file split into chunks.
     """
-    model_splitter = load_sentence_transformers_model(**kwargs)
-    texts_splitters: list[list[str]] = []
-    file_names: list[str] = []
+    headers = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+        ("###", "Header 3"),
+    ]
+    markdown_splitter = MarkdownHeaderTextSplitter(headers)
+
+    chunk_size = 1000
+    chunk_overlap = 100
+    recursive_text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size, chunk_overlap=chunk_overlap
+    )
+
+    tmp_list: list[list[Document]] = []
+    flatten_doc_list: list[Document] = []
 
     project_root = Path(__file__).resolve().parents[2]
     folder_path = project_root / "docs"
@@ -40,8 +52,17 @@ def create_texts_splitters(**kwargs) -> tuple[list[list[str]], list[str]]:
         if file_name.endswith(".md"):
             file_path = folder_path / file_name
             text_content = _get_text_from_file(file_path)
-            text_splitter = model_splitter.split_text(text_content)
-            texts_splitters.append(text_splitter)
-            file_names.append(file_name)
+            markdown_splitted = markdown_splitter.split_text(text_content)
+            recursive_splitted = recursive_text_splitter.split_documents(
+                markdown_splitted
+            )
 
-    return texts_splitters, file_names
+            # add file name to each document
+            for doc in recursive_splitted:
+                doc.metadata["source"] = file_name
+                tmp_list.append(recursive_splitted)
+
+    # flatten the list of lists into a single list
+    flatten_doc_list = list(itertools.chain.from_iterable(tmp_list))
+
+    return flatten_doc_list
