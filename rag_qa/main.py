@@ -64,6 +64,12 @@ def get_argument_parser() -> argparse.ArgumentParser:
         required=True,
         help="The question to ask the RAG_QA application.",
     )
+    parser.add_argument(
+        "--verbose",
+        type=bool,
+        default=True,
+        help="Enable verbose output.",
+    )
 
     return parser.parse_args()
 
@@ -83,7 +89,7 @@ def main():
         top_p=0.95,
         repeat_penalty=1.1,
         max_tokens=128,
-        verbose=False,
+        verbose=args.verbose,
         n_gpu_layers=-1,
         use_mlock=True,
         n_ctx=32768,
@@ -110,7 +116,7 @@ def main():
             use_mlock=True,
             n_ctx=32768,
             n_batch=32,
-            verbose=False,
+            verbose=args.verbose,
             **args.embedding_model_kwargs,
         ),
     ).as_retriever(search_kwargs={"k": 3})
@@ -147,11 +153,15 @@ def main():
         ]
     )
 
-    map_chain = LLMChain(llm=chat_llm, prompt=map_prompt, verbose=True)
-    reduce_llm_chain = LLMChain(llm=chat_llm, prompt=reduce_prompt, verbose=True)
+    map_chain = LLMChain(llm=chat_llm, prompt=map_prompt, verbose=args.verbose)
+    reduce_llm_chain = LLMChain(
+        llm=chat_llm, prompt=reduce_prompt, verbose=args.verbose
+    )
 
     combine_documents_chain = StuffDocumentsChain(
-        llm_chain=reduce_llm_chain, document_variable_name="summaries", verbose=True
+        llm_chain=reduce_llm_chain,
+        document_variable_name="summaries",
+        verbose=args.verbose,
     )
     reduce_documents_chain = ReduceDocumentsChain(
         combine_documents_chain=combine_documents_chain,
@@ -162,7 +172,7 @@ def main():
         llm_chain=map_chain,
         reduce_documents_chain=reduce_documents_chain,
         document_variable_name="input_documents",
-        verbose=True,
+        verbose=args.verbose,
     )
 
     print("RAG_QA application is ready to answer questions.")
