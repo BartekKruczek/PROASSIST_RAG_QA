@@ -6,8 +6,12 @@ import argparse
 import json
 
 from langchain.callbacks.tracers import ConsoleCallbackHandler
-from langchain.chains import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains.combine_documents.map_reduce import (
+    MapReduceDocumentsChain,
+    ReduceDocumentsChain,
+)
+from langchain.chains.combine_documents.stuff import StuffDocumentsChain
+from langchain.chains.llm import LLMChain
 from langchain.globals import set_debug, set_verbose
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -29,44 +33,42 @@ def get_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--chat-model-filename",
         type=str,
+        required=False,
         default="Qwen3-14B-Q6_K.gguf",
         help="Filename for the chat model.",
     )
     parser.add_argument(
         "--embedding-model-filename",
         type=str,
+        required=False,
         default="Qwen3-Embedding-0.6B-f16.gguf",
         help="Filename for the embedding model.",
-    )
-    parser.add_argument(
-        "--text-splitter-model-id",
-        type=str,
-        default="Snowflake/snowflake-arctic-embed-l-v2.0",
-        help="Hugging Face model ID for the text splitter.",
     )
     parser.add_argument(
         "--chat-model-kwargs",
         type=json.loads,
         default={},
+        required=False,
         help="Additional keyword arguments for the chat model.",
     )
     parser.add_argument(
         "--embedding-model-kwargs",
         type=json.loads,
         default={},
+        required=False,
         help="Additional keyword arguments for the embedding model.",
-    )
-    parser.add_argument(
-        "--text-splitter-kwargs",
-        type=json.loads,
-        default={},
-        help="Additional keyword arguments for the text splitter.",
     )
     parser.add_argument(
         "--question",
         type=str,
         required=True,
         help="The question to ask the RAG_QA application.",
+    )
+    parser.add_argument(
+        "--verbose",
+        type=bool,
+        default=True,
+        help="Enable verbose output.",
     )
 
     return parser.parse_args()
@@ -87,7 +89,7 @@ def main():
         top_p=0.95,
         repeat_penalty=1.1,
         max_tokens=128,
-        verbose=False,
+        verbose=args.verbose,
         n_gpu_layers=-1,
         use_mlock=True,
         n_ctx=32768,
@@ -104,57 +106,83 @@ def main():
     response = chat_llm.invoke("Co jest stolicą Polski? /no_think")
     print(response)
 
-    texts, file_names = create_texts_splitters(
-        model_name=args.text_splitter_model_id,
-        **args.text_splitter_kwargs,
-    )
+    flat_doc_list = create_texts_splitters()
 
     retriever = create_vector_db(
-        texts=texts,
-        file_names=file_names,
+        flat_doc_list=flat_doc_list,
         embeddings=load_embeddings_model(
             model_filename=args.embedding_model_filename,
             n_gpu_layers=-1,
             use_mlock=True,
             n_ctx=32768,
-            verbose=False,
+            n_batch=32,
+            verbose=args.verbose,
             **args.embedding_model_kwargs,
         ),
-    ).as_retriever(search_kwargs={"k": 1})
+    ).as_retriever(search_kwargs={"k": 3})
 
     # check what retriever returns
     print("Retrieving documents for the question...")
-    docs = retriever.get_relevant_documents(args.question)
+    docs = retriever.invoke(args.question)
     for doc in docs:
         print(f"Retrieved document: {doc.page_content[:100]}...", doc.metadata)
 
     system_prompt = (
-        "Jesteś asystentem QA. "
-        "Odpowiadaj WYŁĄCZNIE jednym krótkim zdaniem. "
-        "Jeśli nie znasz odpowiedzi, napisz: 'Nie wiem'. "
-        "Nie pokazuj swojego rozumowania. "
-        "Odpowiadaj wyłącznie gotową odpowiedzią. "
-        "Odpowiadaj zawsze po polsku.\n\n"
-        "Kontekst: {context}"
+        "Jesteś asystentem QA. </no_think> "
+        "Odpowiadaj WYŁĄCZNIE jednym krótkim zdaniem. </no_think> "
+        "Jeśli nie znasz odpowiedzi, napisz: 'Nie wiem'. </no_think> "
+        "Nie pokazuj swojego rozumowania. </no_think> "
+        "Odpowiadaj wyłącznie gotową odpowiedzią. </no_think> "
+        "Odpowiadaj zawsze po polsku.\n\n </no_think> "
+        "Kontekst: {input_documents}\n\n </no_think> "
     )
 
-    prompt = ChatPromptTemplate.from_messages(
+    map_prompt = ChatPromptTemplate.from_messages(
         [
             ("system", system_prompt),
-            ("human", "{input}"),
+            ("human", "{input_documents}\n\nPytanie: {question}"),
+        ]
+    )
+    reduce_prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "Podsumuj wszystkie odpowiedzi w jedno krótkie zdanie. </no_think>",
+            ),
+            ("human", "{summaries}"),
         ]
     )
 
-    question_answer_chain = create_stuff_documents_chain(
-        chat_llm, prompt, document_variable_name="context"
+    map_chain = LLMChain(llm=chat_llm, prompt=map_prompt, verbose=args.verbose)
+    reduce_llm_chain = LLMChain(
+        llm=chat_llm, prompt=reduce_prompt, verbose=args.verbose
     )
-    chain = create_retrieval_chain(retriever, question_answer_chain)
+
+    combine_documents_chain = StuffDocumentsChain(
+        llm_chain=reduce_llm_chain,
+        document_variable_name="summaries",
+        verbose=args.verbose,
+    )
+    reduce_documents_chain = ReduceDocumentsChain(
+        combine_documents_chain=combine_documents_chain,
+        collapse_documents_chain=combine_documents_chain,
+        token_max=200,
+    )
+    map_reduce_chain = MapReduceDocumentsChain(
+        llm_chain=map_chain,
+        reduce_documents_chain=reduce_documents_chain,
+        document_variable_name="input_documents",
+        verbose=args.verbose,
+    )
 
     print("RAG_QA application is ready to answer questions.")
 
     question = args.question
-    response = chain.invoke(
-        {"input": question}, config={"callbacks": [ConsoleCallbackHandler()]}
+    retrieved_docs = retriever.invoke(question)
+
+    response = map_reduce_chain.invoke(
+        {"input_documents": retrieved_docs, "question": question},
+        config={"callbacks": [ConsoleCallbackHandler()]},
     )
     print(f"Question: {question}")
     print(f"Response: {response}")
